@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKL Music Workflow v3.8</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#070911;--surface:#0E1220;--bd:rgba(255,255,255,0.07);--nexus:#D4A820;--green:#3DFFA0;--dim:#3A4260;--text:#B8C4DC;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(61,255,154,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(61,255,154,0.04) 1px,transparent 1px);background-size:36px 36px;pointer-events:none;}
+.wrap{max-width:720px;margin:0 auto;padding:24px 16px 100px;position:relative;z-index:1;}
+.header{text-align:center;margin-bottom:20px;}
+.header .sub{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:4px;color:var(--green);margin-bottom:8px;}
+.header h1{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;background:linear-gradient(135deg,var(--nexus),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+.header p{font-size:11px;color:var(--dim);}
+.ver-badges{display:flex;justify-content:center;gap:8px;margin-top:8px;flex-wrap:wrap;}
+.ver-badge{font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1.5px;padding:3px 10px;border-radius:20px;border:1px solid var(--bd);background:rgba(255,255,255,0.03);color:var(--dim);}
+.ver-badge.ok{color:var(--green);border-color:rgba(61,255,154,0.3);background:rgba(61,255,154,0.06);}
+.ver-badge.err{color:#FF6060;border-color:rgba(255,80,80,0.3);}
+.sync-bar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--surface);border:1px solid var(--bd);border-radius:8px;margin-bottom:16px;font-size:11px;}
+.sync-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.sync-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green);}
+.sync-dot.err{background:#FF6060;}
+.sync-dot.loading{background:var(--nexus);animation:pulse .8s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sync-time{margin-left:auto;font-family:'Orbitron',monospace;font-size:8px;color:var(--dim);}
+.tabs{display:flex;gap:4px;margin-bottom:18px;overflow-x:auto;padding-bottom:4px;}
+.tab-btn{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;padding:7px 12px;border-radius:8px;border:1px solid var(--bd);background:transparent;color:var(--dim);cursor:pointer;white-space:nowrap;transition:all .2s;}
+.tab-btn.active{background:rgba(61,255,154,0.12);border-color:rgba(61,255,154,0.5);color:var(--green);}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+.card{background:var(--surface);border:1px solid var(--bd);border-radius:12px;padding:16px 18px;margin-bottom:12px;}
+.card.ng{border-color:rgba(212,168,32,0.35);background:rgba(212,168,32,0.06);}
+.card.gg{border-color:rgba(61,255,154,0.35);background:rgba(61,255,154,0.05);}
+.lbl{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:3px;color:var(--dim);margin-bottom:8px;display:block;}
+.lbl.n{color:var(--nexus);}.lbl.g{color:var(--green);}
+textarea,input[type=text],input[type=password]{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--bd);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:13px;outline:none;resize:vertical;}
+textarea:focus,input:focus{border-color:rgba(61,255,154,0.4);}
+.row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;}
+.btn{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;padding:7px 14px;border-radius:8px;cursor:pointer;border:1px solid;transition:all .2s;}
+.bg{background:rgba(61,255,154,0.12);border-color:rgba(61,255,154,0.4);color:var(--green);}
+.bn{background:rgba(212,168,32,0.12);border-color:rgba(212,168,32,0.4);color:var(--nexus);}
+.br{background:transparent;border-color:rgba(255,80,80,0.3);color:#FF8080;}
+.bd2{background:transparent;border-color:var(--bd);color:var(--dim);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.idea-card{border:1px solid var(--bd);border-radius:10px;margin-bottom:8px;overflow:hidden;background:rgba(255,255,255,0.02);transition:border-color .2s;}
+.idea-card.sel{border-color:rgba(61,255,154,0.5);background:rgba(61,255,154,0.04);}
+.idea-card.edit{border-color:rgba(212,168,32,0.5);background:rgba(212,168,32,0.03);}
+.idea-hd{padding:10px 12px;cursor:pointer;}
+.idea-actions{float:right;display:flex;gap:4px;margin-left:8px;}
+.ibt{background:transparent;border:1px solid var(--bd);border-radius:6px;color:var(--dim);font-size:11px;padding:3px 7px;cursor:pointer;line-height:1;}
+.ibt.act{background:rgba(212,168,32,0.12);border-color:rgba(212,168,32,0.4);color:var(--nexus);}
+.idea-txt{font-size:13px;color:var(--text);line-height:1.6;}
+.idea-meta{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;clear:both;}
+.badge{font-size:9px;font-family:'Orbitron',monospace;padding:2px 7px;border-radius:10px;}
+.badge.memo{color:var(--nexus);background:rgba(212,168,32,0.1);border:1px solid rgba(212,168,32,0.25);}
+.badge.sel2{color:var(--green);}
+.memo-view{border-top:1px solid var(--bd);padding:10px 12px;background:rgba(0,0,0,0.12);font-size:12px;color:var(--text);line-height:1.8;white-space:pre-wrap;}
+.edit-panel{border-top:1px solid rgba(212,168,32,0.2);padding:14px;background:rgba(212,168,32,0.03);}
+.result-txt{font-size:13px;color:var(--text);line-height:1.9;white-space:pre-wrap;}
+.hook-txt{font-size:20px;font-weight:700;color:#fff;line-height:1.4;}
+.tag{display:inline-block;padding:4px 10px;border-radius:20px;font-size:10px;margin:2px;cursor:pointer;border:1px solid var(--bd);background:rgba(255,255,255,0.03);color:var(--dim);transition:all .2s;}
+.tag.on{border-color:rgba(212,168,32,0.35);background:rgba(212,168,32,0.12);color:var(--nexus);}
+.faction-item{background:rgba(255,255,255,0.02);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:8px;}
+.log-item{background:rgba(255,255,255,0.015);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-bottom:6px;}
+.sync-badge-fixed{position:fixed;bottom:14px;right:14px;background:var(--surface);border:1px solid var(--bd);border-radius:20px;padding:7px 12px 7px 10px;display:flex;align-items:center;gap:7px;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,0.5);}
+.toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;padding:10px 20px;border-radius:20px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:1000;}
+.toast.show{opacity:1;}
+.empty{font-size:12px;color:var(--dim);padding:8px 0;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--dim);border-radius:2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="sub">MKL MUSIC / MONKEYLEADER</div>
+    <h1>MUSIC WORKFLOW</h1>
+    <p>아이디어 → 스토리 → 가사 → 수노 프롬프트</p>
+    <div class="ver-badges">
+      <span class="ver-badge">v3.8</span>
+      <span class="ver-badge" id="conn-badge">연결 테스트 중...</span>
+    </div>
+  </div>
+
+  <div class="sync-bar">
+    <div class="sync-dot ok" id="sync-dot"></div>
+    <span id="sync-status" style="color:var(--green);">로컬 저장 모드</span>
+    <span class="sync-time" id="sync-time"></span>
+  </div>
+
+  <!-- 오류 표시 및 재시도 -->
+  <div id="conn-error-box" style="display:none;background:rgba(255,80,80,0.08);border:1px solid rgba(255,80,80,0.3);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:11px;color:#FF8080;line-height:1.7;"></div>
+  <div id="retry-bar" style="display:none;text-align:center;margin-bottom:12px;">
+    <button class="btn bn" onclick="retryConnect()">🔄 재연결 시도</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(0)">💡 아이디어</button>
+    <button class="tab-btn" onclick="switchTab(1)">📖 스토리</button>
+    <button class="tab-btn" onclick="switchTab(2)">🎤 가사</button>
+    <button class="tab-btn" onclick="switchTab(3)">🎛 수노</button>
+    <button class="tab-btn" onclick="switchTab(4)">📚 스타일</button>
+    <button class="tab-btn" onclick="switchTab(5)">🗂 로그</button>
+    <button class="tab-btn" onclick="switchTab(6)">⚙️ 설정</button>
+  </div>
+
+  <!-- TAB 0: 아이디어 -->
+  <div class="tab-panel active" id="tab-0">
+    <div class="card">
+      <span class="lbl">// 새 아이디어</span>
+      <textarea id="idea-input" rows="3" placeholder="떠오른 아이디어, 감정, 상황, 단어..."></textarea>
+      <div class="row">
+        <button class="btn bg" onclick="addIdea()">+ 저장</button>
+        <button class="btn bn" id="combine-btn" style="display:none" onclick="combineIdeas()">📋 조합 프롬프트</button>
+        <span id="combine-spin" style="display:none;font-size:11px;color:var(--green);">AI 조합 중...</span>
+      </div>
+    </div>
+    <div class="card ng" id="combine-result" style="display:none">
+      <span class="lbl n">// Claude용 프롬프트 (복사 → Claude.ai에 붙여넣기)</span>
+      <pre class="result-txt" id="combine-text" style="font-size:11px;font-family:monospace;background:rgba(0,0,0,0.2);padding:10px;border-radius:8px;max-height:180px;overflow-y:auto;"></pre>
+      <div class="row">
+        <button class="btn bn" onclick="copyId('combine-text')">📋 프롬프트 복사</button>
+        <a href="https://claude.ai" target="_blank" class="btn bg" style="text-decoration:none;display:inline-block;">Claude.ai 열기 →</a>
+      </div>
+    </div>
+    <div class="card">
+      <span class="lbl" id="ideas-lbl">// 아이디어 뱅크 (0개)</span>
+      <p style="font-size:10px;color:var(--dim);margin-bottom:10px;">클릭=선택 | 📖→ 스토리 | ✏️ 수정</p>
+      <div id="ideas-list"><p class="empty">로딩 중...</p></div>
+    </div>
+  </div>
+
+  <!-- TAB 1: 스토리 -->
+  <div class="tab-panel" id="tab-1">
+    <div class="card">
+      <span class="lbl">// 컨셉 입력</span>
+      <textarea id="story-concept" rows="3" placeholder="예: 현대 사회의 모순을 발랄하게 꼬집는 노래..."></textarea>
+      <div class="row" style="margin-top:12px;align-items:center;">
+        <span style="font-family:'Orbitron',monospace;font-size:9px;color:var(--dim);">분위기:</span>
+        <div id="faction-btns" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+        <button class="btn bg" style="margin-left:auto;" id="story-btn" onclick="generateStory()">📋 프롬프트 생성</button>
+      </div>
+    </div>
+    <div class="card ng" id="story-prompt-card" style="display:none">
+      <span class="lbl n">// Claude용 프롬프트 (복사 → Claude.ai에 붙여넣기)</span>
+      <pre class="result-txt" id="story-prompt-text" style="font-size:11px;font-family:monospace;background:rgba(0,0,0,0.2);padding:10px;border-radius:8px;max-height:200px;overflow-y:auto;"></pre>
+      <div class="row">
+        <button class="btn bn" onclick="copyId('story-prompt-text')">📋 프롬프트 복사</button>
+        <a href="https://claude.ai" target="_blank" class="btn bg" style="text-decoration:none;display:inline-block;">Claude.ai 열기 →</a>
+      </div>
+    </div>
+    <div class="card" id="story-result" style="display:none">
+      <span class="lbl">// ① 스토리 붙여넣기</span>
+      <p style="font-size:10px;color:var(--dim);margin-bottom:6px;">Claude 답변에서 【스토리】 내용만 복사해서 붙여넣기</p>
+      <textarea id="story-text" rows="5" placeholder="【스토리】 내용 붙여넣기..."></textarea>
+      <button class="btn bd2" style="margin-top:8px;padding:5px 12px;font-size:9px;" onclick="copyId('story-text')">📋 복사</button>
+
+      <span class="lbl" style="margin-top:16px;">// ② 훅 후보 붙여넣기 (1순위부터)</span>
+      <p style="font-size:10px;color:var(--dim);margin-bottom:6px;">Claude 답변에서 훅을 각각 붙여넣기. 가사 탭엔 선택한 훅만 전송됩니다.</p>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+        <span style="font-family:'Orbitron',monospace;font-size:9px;color:var(--nexus);width:44px;flex-shrink:0;">1순위</span>
+        <input type="text" id="hook-text" placeholder="가장 마음에 드는 훅" style="flex:1;">
+        <button class="btn bn" style="padding:5px 10px;font-size:9px;flex-shrink:0;" onclick="copyId('hook-text')">📋</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+        <span style="font-family:'Orbitron',monospace;font-size:9px;color:var(--dim);width:44px;flex-shrink:0;">2순위</span>
+        <input type="text" id="hook-text-2" placeholder="두 번째 훅" style="flex:1;">
+        <button class="btn bd2" style="padding:5px 10px;font-size:9px;flex-shrink:0;" onclick="useHook(2)">선택</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;">
+        <span style="font-family:'Orbitron',monospace;font-size:9px;color:var(--dim);width:44px;flex-shrink:0;">3순위</span>
+        <input type="text" id="hook-text-3" placeholder="세 번째 훅" style="flex:1;">
+        <button class="btn bd2" style="padding:5px 10px;font-size:9px;flex-shrink:0;" onclick="useHook(3)">선택</button>
+      </div>
+
+      <div class="row">
+        <button class="btn bn" onclick="saveStoryResult()">💾 저장</button>
+        <button class="btn bg" onclick="toTab2()">→ 가사 탭 (1순위 훅)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: 가사 -->
+  <div class="tab-panel" id="tab-2">
+    <div class="card"><span class="lbl">// 스토리</span><textarea id="lyrics-story" rows="3" placeholder="스토리 탭에서 전송하거나 직접 입력..."></textarea></div>
+    <div class="card"><span class="lbl">// 메인 훅</span><input type="text" id="lyrics-hook" placeholder="중독적인 훅 문장..."></div>
+    <div class="card">
+      <span class="lbl">// 스타일 힌트</span>
+      <input type="text" id="lyrics-style" placeholder="감성적, 강렬, 발랄, 풍자적...">
+      <div class="row">
+        <button class="btn bg" onclick="generateLyrics()">📋 프롬프트 생성</button>
+        
+      </div>
+    </div>
+    <div class="card gg" id="lyrics-prompt-card" style="display:none">
+      <span class="lbl g">// Claude용 프롬프트 (복사 → Claude.ai에 붙여넣기)</span>
+      <pre class="result-txt" id="lyrics-prompt-text" style="font-size:11px;font-family:monospace;background:rgba(0,0,0,0.2);padding:10px;border-radius:8px;max-height:200px;overflow-y:auto;"></pre>
+      <div class="row">
+        <button class="btn bg" onclick="copyId('lyrics-prompt-text')">📋 프롬프트 복사</button>
+        <a href="https://claude.ai" target="_blank" class="btn bn" style="text-decoration:none;display:inline-block;">Claude.ai 열기 →</a>
+      </div>
+    </div>
+    <div class="card" id="lyrics-result" style="display:none">
+      <span class="lbl g">// Claude 가사 결과 붙여넣기 (버전 선택)</span>
+      <p style="font-size:10px;color:var(--dim);margin-bottom:12px;">Claude 답변에서 각 버전 가사를 붙여넣고, 수노에 쓸 버전을 선택하세요.</p>
+
+      <!-- 버전 1 -->
+      <div style="border:1px solid rgba(61,255,154,0.3);border-radius:10px;padding:14px;margin-bottom:10px;background:rgba(61,255,154,0.04);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-family:'Orbitron',monospace;font-size:10px;color:var(--green);">VER. 1</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn bg" style="padding:5px 10px;font-size:9px;" onclick="copyId('lyrics-text-1')">📋 복사</button>
+            <button class="btn bn" style="padding:5px 10px;font-size:9px;" onclick="selectLyrics(1)">✦ 수노로</button>
+          </div>
+        </div>
+        <textarea id="lyrics-text-1" rows="8" placeholder="버전 1 스타일 태그 + 가사 붙여넣기..."></textarea>
+      </div>
+
+      <!-- 버전 2 -->
+      <div style="border:1px solid rgba(212,168,32,0.3);border-radius:10px;padding:14px;margin-bottom:10px;background:rgba(212,168,32,0.04);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-family:'Orbitron',monospace;font-size:10px;color:var(--nexus);">VER. 2</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn bn" style="padding:5px 10px;font-size:9px;" onclick="copyId('lyrics-text-2')">📋 복사</button>
+            <button class="btn bn" style="padding:5px 10px;font-size:9px;" onclick="selectLyrics(2)">✦ 수노로</button>
+          </div>
+        </div>
+        <textarea id="lyrics-text-2" rows="8" placeholder="버전 2 스타일 태그 + 가사 붙여넣기..."></textarea>
+      </div>
+
+      <!-- 버전 3 -->
+      <div style="border:1px solid rgba(144,144,255,0.3);border-radius:10px;padding:14px;margin-bottom:10px;background:rgba(144,144,255,0.04);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-family:'Orbitron',monospace;font-size:10px;color:#9090FF;">VER. 3</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn bd2" style="padding:5px 10px;font-size:9px;" onclick="copyId('lyrics-text-3')">📋 복사</button>
+            <button class="btn bn" style="padding:5px 10px;font-size:9px;" onclick="selectLyrics(3)">✦ 수노로</button>
+          </div>
+        </div>
+        <textarea id="lyrics-text-3" rows="8" placeholder="버전 3 스타일 태그 + 가사 붙여넣기..."></textarea>
+      </div>
+
+      <div id="lyrics-text" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- TAB 3: 수노 -->
+  <div class="tab-panel" id="tab-3">
+    <div class="card"><span class="lbl">// 빠른 태그</span><div id="quick-tags"></div></div>
+    <div class="card"><span class="lbl">// 스타일 태그</span><input type="text" id="suno-style" placeholder="K-pop, cinematic, female vocal..."></div>
+    <div class="card">
+      <span class="lbl">// 가사</span>
+      <textarea id="suno-lyrics" rows="6" placeholder="가사 탭에서 전송하거나 붙여넣기..."></textarea>
+      <div class="row">
+        <button class="btn bg" onclick="generateSuno()">📋 프롬프트 생성</button>
+        
+      </div>
+    </div>
+    <div class="card gg" id="suno-prompt-card" style="display:none">
+      <span class="lbl g">// Claude용 프롬프트 (복사 → Claude.ai에 붙여넣기)</span>
+      <pre class="result-txt" id="suno-prompt-text" style="font-size:11px;font-family:monospace;background:rgba(0,0,0,0.2);padding:10px;border-radius:8px;max-height:200px;overflow-y:auto;"></pre>
+      <div class="row">
+        <button class="btn bg" onclick="copyId('suno-prompt-text')">📋 프롬프트 복사</button>
+        <a href="https://claude.ai" target="_blank" class="btn bn" style="text-decoration:none;display:inline-block;">Claude.ai 열기 →</a>
+      </div>
+    </div>
+    <div class="card gg" id="suno-result" style="display:none">
+      <span class="lbl g">// Claude 수노 프롬프트 결과 붙여넣기</span>
+      <p style="font-size:10px;color:var(--dim);margin-bottom:8px;">Claude 답변을 아래에 붙여넣으세요.</p>
+      <pre id="suno-text" style="font-family:monospace;font-size:12px;color:var(--text);white-space:pre-wrap;line-height:1.8;"></pre>
+      <textarea id="suno-text-input" rows="8" placeholder="Claude 수노 프롬프트를 여기에 붙여넣기..."></textarea>
+      <div class="row"><button class="btn bg" onclick="saveSunoResult()">💾 저장</button></div>
+    </div>
+    <div class="card"><span class="lbl">// 구조 태그 (클릭=복사)</span><div id="suno-structs"></div></div>
+  </div>
+
+  <!-- TAB 4: 스타일 -->
+  <div class="tab-panel" id="tab-4">
+    <div class="card">
+      <span class="lbl">// 새 프리셋</span>
+      <input type="text" id="preset-name" placeholder="프리셋 이름" style="margin-bottom:8px;">
+      <textarea id="preset-tags" rows="2" placeholder="스타일 태그 (영어, 쉼표 구분)"></textarea>
+      <div class="row"><button class="btn bg" onclick="addPreset()">+ 저장</button></div>
+    </div>
+    <div class="card"><span class="lbl" id="presets-lbl">// 저장된 스타일</span><div id="presets-list"><p class="empty">로딩 중...</p></div></div>
+  </div>
+
+  <!-- TAB 5: 로그 -->
+  <div class="tab-panel" id="tab-5">
+    <div class="card">
+      <span class="lbl">// 생성 기록</span>
+      <div class="row" style="margin-top:0;margin-bottom:12px;">
+        <button class="btn bd2" onclick="filterLogs('all')">전체</button>
+        <button class="btn bd2" onclick="filterLogs('story')">스토리</button>
+        <button class="btn bd2" onclick="filterLogs('lyrics')">가사</button>
+        <button class="btn bd2" onclick="filterLogs('suno')">수노</button>
+      </div>
+      <div id="logs-list"><p class="empty">로딩 중...</p></div>
+    </div>
+  </div>
+
+  <!-- TAB 6: 설정 -->
+  <div class="tab-panel" id="tab-6">
+    <!-- 스토리 생성 기준 -->
+    <div class="card">
+      <span class="lbl g">// 스토리 생성 기준</span>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.7;">스토리 프롬프트 생성 시 Claude에게 전달되는 기준입니다. 자유롭게 수정 가능합니다.</p>
+
+      <span class="lbl">// 스토리 분량 기준</span>
+      <input type="text" id="story-length-guide" placeholder="예: 200~300자" style="margin-bottom:10px;">
+
+      <span class="lbl">// 스토리 구성 기준</span>
+      <textarea id="story-structure-guide" rows="4" placeholder="예: 감정선 + 주요 장면 2~3개 + 결말 방향 포함"></textarea>
+
+      <span class="lbl" style="margin-top:10px;">// 훅 작성 기준</span>
+      <textarea id="hook-guide" rows="4" placeholder="예: 8~12음절, 중독적, 반복 가능, 영어 혼용 가능"></textarea>
+
+      <span class="lbl" style="margin-top:10px;">// 출력 형식 안내</span>
+      <textarea id="output-format-guide" rows="4" placeholder="Claude에게 원하는 출력 형식 지정"></textarea>
+
+      <div class="row">
+        <button class="btn bg" onclick="saveStoryGuide()">💾 저장</button>
+        <button class="btn bd2" onclick="resetStoryGuide()">초기화</button>
+      </div>
+      <p id="guide-status" style="font-size:11px;color:var(--dim);margin-top:8px;"></p>
+    </div>
+
+    <!-- 팩션 관리 -->
+    <div class="card">
+      <span class="lbl g">// 분위기/팩션 관리</span>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.7;">스토리 탭 분위기 버튼을 관리합니다. 🔒는 기본 팩션입니다.</p>
+      <div id="faction-list-settings"></div>
+      <span class="lbl" style="margin-top:14px;">// 새 팩션 추가</span>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input type="text" id="nf-emoji" placeholder="🎭" style="width:56px;text-align:center;font-size:18px;padding:8px 6px;">
+        <input type="text" id="nf-name" placeholder="팩션 이름" style="flex:1;">
+      </div>
+      <input type="text" id="nf-desc" placeholder="한 줄 설명" style="margin-bottom:8px;">
+      <textarea id="nf-prompt" rows="4" placeholder="AI에게 전달할 세계관/분위기 설명 (자세할수록 좋음)&#10;예: 밝고 발랄한 리듬이지만 가사는 날카로운 사회 풍자..."></textarea>
+      <div class="row"><button class="btn bg" onclick="addFaction()">+ 팩션 추가</button></div>
+    </div>
+    <!-- GitHub 토큰 -->
+    <div class="card">
+      <span class="lbl g">// GitHub 클라우드 저장 — 무료</span>
+      <p style="font-size:12px;color:var(--dim);margin-bottom:12px;line-height:1.7;">GitHub Personal Access Token을 입력하면 아이디어·가사·로그가 GitHub에 자동 저장됩니다.</p>
+      <input type="password" id="gh-token-input" placeholder="ghp_...">
+      <div class="row">
+        <button class="btn bg" onclick="saveGhToken()">💾 저장 후 연결</button>
+        <button class="btn bd2" onclick="showGhToken()">현재 토큰 확인</button>
+      </div>
+      <p id="gh-token-status" style="font-size:11px;color:var(--dim);margin-top:10px;"></p>
+    </div>
+    <div class="card">
+      <span class="lbl">// 토큰 발급 방법</span>
+      <div style="font-size:12px;color:var(--text);line-height:2.1;">
+        1. GitHub → 프로필 → Settings<br>
+        2. Developer settings → Personal access tokens<br>
+        3. Tokens (classic) → Generate new token<br>
+        4. <strong style="color:var(--green);">repo</strong> 체크 → Generate → 복사
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 하단 우측 동기화 배지 -->
+<div class="sync-badge-fixed" id="sync-badge">
+  <div class="sync-dot loading" id="badge-dot"></div>
+  <div style="font-family:'Orbitron',monospace;line-height:1.5;">
+    <div style="font-size:7px;letter-spacing:1.5px;color:var(--dim);">CLOUD SYNC</div>
+    <div style="font-size:9px;" id="badge-time">연결 중...</div>
+  </div>
+</div>
+
+<div class="toast" id="toast">복사됨 ✓</div>
+
+<script>
+// ── 저장소: localStorage + GitHub 클라우드 백업 ───────────────
+const GH_OWNER = "monkeyleader00-legion";
+const GH_REPO  = "mkl-music";
+const GH_BRANCH = "main";
+const GH_API = "https://api.github.com";
+let ghAvailable = false;
+
+// ── localStorage (기본 — 항상 작동) ──────────────────────────
+function lsGet(col) {
+  try { return JSON.parse(localStorage.getItem("mkl_"+col)) || []; } catch { return []; }
+}
+function lsSave(col, arr) {
+  try { localStorage.setItem("mkl_"+col, JSON.stringify(arr)); } catch {}
+}
+function lsAdd(col, data) {
+  data.id = data.id || Date.now().toString(36)+Math.random().toString(36).slice(2);
+  data._ts = new Date().toISOString();
+  const arr = lsGet(col); arr.push(data); lsSave(col, arr); return data;
+}
+function lsUpdate(col, id, patch) {
+  lsSave(col, lsGet(col).map(item=>item.id===id?{...item,...patch,_updTs:new Date().toISOString()}:item));
+}
+function lsDel(col, id) { lsSave(col, lsGet(col).filter(i=>i.id!==id)); }
+
+// ── GitHub API (클라우드 백업) ─────────────────────────────────
+function ghToken() { return localStorage.getItem("mkl_gh_token")||""; }
+
+async function ghGetFile(filename) {
+  const r = await fetch(`${GH_API}/repos/${GH_OWNER}/${GH_REPO}/contents/data/${filename}`, {
+    headers: { Authorization:`token ${ghToken()}`, Accept:"application/vnd.github+json" }
+  });
+  if (r.status===404) return { data:[], sha:null };
+  if (!r.ok) throw new Error("ghGet failed "+r.status);
+  const d = await r.json();
+  const decoded = JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,"")))));
+  return { data: decoded, sha: d.sha };
+}
+
+async function ghSaveFile(filename, data, sha) {
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+  const body = { message:`update ${filename}`, content, branch:GH_BRANCH };
+  if (sha) body.sha = sha;
+  const r = await fetch(`${GH_API}/repos/${GH_OWNER}/${GH_REPO}/contents/data/${filename}`, {
+    method:"PUT",
+    headers:{ Authorization:`token ${ghToken()}`, "Content-Type":"application/json", Accept:"application/vnd.github+json" },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) { const e=await r.json(); throw new Error(e.message); }
+  return await r.json();
+}
+
+// GitHub에 컬렉션 전체 저장 (비동기 백그라운드)
+async function ghSyncCol(col) {
+  if (!ghToken()) return;
+  try {
+    const arr = lsGet(col);
+    const { sha } = await ghGetFile(`${col}.json`);
+    await ghSaveFile(`${col}.json`, arr, sha);
+  } catch(e) { console.warn("ghSync 실패:", col, e.message); }
+}
+
+// GitHub에서 불러와서 localStorage에 병합
+async function ghPullCol(col) {
+  if (!ghToken()) return false;
+  try {
+    const { data } = await ghGetFile(`${col}.json`);
+    if (data && data.length > 0) {
+      lsSave(col, data);
+      return true;
+    }
+  } catch(e) { console.warn("ghPull 실패:", col, e.message); }
+  return false;
+}
+
+// ── 통합 DB 함수 ──────────────────────────────────────────────
+async function dbAdd(col, data) {
+  const item = lsAdd(col, {...data});
+  if (ghAvailable) ghSyncCol(col).catch(()=>{});
+  return item;
+}
+async function dbUpdate(col, id, patch) {
+  lsUpdate(col, id, patch);
+  if (ghAvailable) ghSyncCol(col).catch(()=>{});
+}
+async function dbDel(col, id) {
+  lsDel(col, id);
+  if (ghAvailable) ghSyncCol(col).catch(()=>{});
+}
+function dbList(col) { return lsGet(col); }
+
+// ── Gemini API ─────────────────────────────────────────────────
+const DEFAULT_KEY = "AIzaSyDM_Cm1f_6BeWZF-FvqKdu3ZEuudiZ8dGQ";
+async function callAI(userMsg, system) {
+  try {
+    const key = localStorage.getItem("mkl_gemini_key") || DEFAULT_KEY;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+    const r = await fetch(url, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        systemInstruction:{parts:[{text:system}]},
+        contents:[{parts:[{text:userMsg}]}],
+        generationConfig:{maxOutputTokens:1000,temperature:0.9}
+      })
+    });
+    const d = await r.json();
+    if (d.error) return "오류: " + d.error.message;
+    return d.candidates?.[0]?.content?.parts?.[0]?.text || "응답 없음";
+  } catch(e) { return "연결 오류: " + e.message; }
+}
+
+// ── 팩션 시스템 ────────────────────────────────────────────────
+const DEF_FACTIONS = [
+  {id:"nexus", emoji:"⚡", name:"NEXUS", desc:"AI 통제 유토피아, 금빛, 질서 속 고독", prompt:"NEXUS: AI가 통제하는 유토피아 도시, 금빛 미래, 완벽한 질서 속의 고독. 차갑고 세련된 SF적 분위기.", locked:true},
+  {id:"greenlight", emoji:"🌿", name:"Green Light", desc:"오프그리드, 야성적 낭만, 자유, 민트빛 자연", prompt:"Green Light(그라): 오프그리드, 야성적 낭만, 자유. 날것의 감정, 탈출과 해방의 메시지.", locked:true},
+  {id:"blackcomedy", emoji:"🎭", name:"블랙 코미디", desc:"밝은 리듬 속 현실 풍자, 슬픔과 분노", prompt:"블랙 코미디 풍자 스타일. 분위기와 리듬은 밝고 발랄하고 유머러스하게. 그러나 가사 내용은 현실의 모순·부조리·불평등을 날카롭게 풍자. 반어법과 아이러니 적극 활용. 겉으로는 유쾌하지만 곱씹을수록 슬픔·아쉬움·분노가 배어나오는 구조.", locked:false},
+];
+function getFactions() { try { return JSON.parse(localStorage.getItem("mkl_factions")) || DEF_FACTIONS; } catch { return DEF_FACTIONS; } }
+function setFactions(f) { localStorage.setItem("mkl_factions", JSON.stringify(f)); }
+
+let curFactionId = "nexus";
+
+function renderFactionBtns() {
+  const el = document.getElementById("faction-btns");
+  if (!el) return;
+  el.innerHTML = getFactions().map(f =>
+    `<button onclick="selectFaction('${f.id}')" style="padding:6px 12px;border-radius:8px;border:1px solid ${curFactionId===f.id?"rgba(212,168,32,0.6)":"var(--bd)"};background:${curFactionId===f.id?"rgba(212,168,32,0.2)":"transparent"};color:${curFactionId===f.id?"var(--nexus)":"var(--dim)"};font-family:'Orbitron',monospace;font-size:8px;cursor:pointer;letter-spacing:1px;">${f.emoji} ${f.name}</button>`
+  ).join("");
+}
+
+function renderFactionSettings() {
+  const el = document.getElementById("faction-list-settings");
+  if (!el) return;
+  el.innerHTML = getFactions().map(f => `
+    <div class="faction-item">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div style="flex:1;">
+          <div style="font-size:13px;color:#fff;font-weight:700;margin-bottom:3px;">${f.emoji} ${f.name} ${f.locked?"🔒":""}</div>
+          <div style="font-size:11px;color:var(--dim);margin-bottom:6px;">${f.desc}</div>
+          <div style="font-size:10px;color:var(--dim);background:rgba(0,0,0,0.2);padding:6px 10px;border-radius:6px;line-height:1.6;">${f.prompt.slice(0,100)}${f.prompt.length>100?"...":""}</div>
+        </div>
+        ${!f.locked?`<button class="btn br" style="padding:5px 10px;font-size:9px;flex-shrink:0;" onclick="delFaction('${f.id}')">삭제</button>`:""}
+      </div>
+    </div>`).join("");
+}
+
+window.selectFaction = (id) => { curFactionId = id; renderFactionBtns(); };
+
+window.addFaction = () => {
+  const emoji = document.getElementById("nf-emoji").value.trim()||"🎵";
+  const name = document.getElementById("nf-name").value.trim();
+  const desc = document.getElementById("nf-desc").value.trim();
+  const prompt = document.getElementById("nf-prompt").value.trim();
+  if (!name||!prompt) return alert("이름과 프롬프트를 입력해주세요.");
+  const factions = getFactions();
+  factions.push({id:"custom-"+Date.now(), emoji, name, desc, prompt, locked:false});
+  setFactions(factions);
+  document.getElementById("nf-emoji").value="";
+  document.getElementById("nf-name").value="";
+  document.getElementById("nf-desc").value="";
+  document.getElementById("nf-prompt").value="";
+  renderFactionBtns(); renderFactionSettings();
+  toast("팩션 추가됨 ✓");
+};
+
+window.delFaction = (id) => {
+  if (!confirm("삭제할까요?")) return;
+  setFactions(getFactions().filter(f=>f.id!==id));
+  if (curFactionId===id) curFactionId="nexus";
+  renderFactionBtns(); renderFactionSettings();
+};
+
+// ── UI 헬퍼 ───────────────────────────────────────────────────
+function toast(msg="복사됨 ✓") {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 1800);
+}
+function copyText(text) {
+  // 보안 컨텍스트(https)에서는 clipboard API 사용
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(()=>toast()).catch(()=>fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try {
+    document.execCommand('copy');
+    toast('복사됨 ✓');
+  } catch(e) {
+    toast('복사 실패 — 직접 선택해주세요');
+  }
+  document.body.removeChild(ta);
+}
+window.copyId = (id) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  copyText(el.value !== undefined && el.value !== '' ? el.value : (el.innerText || el.textContent));
+};
+window.copyBoth = () => {
+  const s = document.getElementById("story-text").innerText;
+  const h = document.getElementById("hook-text").innerText;
+  copyText(`스토리: ${s}\n\n메인 훅: ${h}`);
+};
+window.switchTab = (i) => {
+  document.querySelectorAll(".tab-panel").forEach((p,j)=>p.classList.toggle("active",i===j));
+  document.querySelectorAll(".tab-btn").forEach((b,j)=>b.classList.toggle("active",i===j));
+};
+
+function setSyncStatus(state, msg) {
+  const dot=document.getElementById("sync-dot"), status=document.getElementById("sync-status");
+  const time=document.getElementById("sync-time"), badge=document.getElementById("sync-badge");
+  const bdot=document.getElementById("badge-dot"), btime=document.getElementById("badge-time");
+  dot.className="sync-dot "+state; bdot.className="sync-dot "+state;
+  status.textContent=msg;
+  status.style.color=state==="ok"?"var(--green)":state==="err"?"#FF6060":"var(--nexus)";
+  badge.style.borderColor=state==="ok"?"rgba(61,255,154,0.35)":state==="err"?"rgba(255,80,80,0.3)":"rgba(212,168,32,0.35)";
+  btime.style.color=state==="ok"?"var(--green)":state==="err"?"#FF6060":"var(--nexus)";
+  if (state==="ok") {
+    const n=new Date(), p=x=>String(x).padStart(2,"0");
+    const ts=`${n.getMonth()+1}/${n.getDate()} ${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
+    time.textContent=ts+" 동기화"; btime.textContent=ts+" ✓";
+  } else { btime.textContent=state==="err"?"연결 오류":"저장 중..."; }
+}
+
+async function saveLog(type, logContent) {
+  try { await dbAdd("logs", {type, content:logContent}); } catch(e){}
+}
+
+// ── 아이디어 ──────────────────────────────────────────────────
+let ideas=[], selectedIds=[], editingId=null;
+
+function loadIdeas() {
+  ideas = dbList("ideas").sort((a,b)=>(b._ts||"").localeCompare(a._ts||""));
+  renderIdeas();
+}
+
+function renderIdeas() {
+  const list = document.getElementById("ideas-list");
+  document.getElementById("ideas-lbl").textContent=`// 아이디어 뱅크 (${ideas.length}개)`;
+  if (!ideas.length) { list.innerHTML='<p class="empty">아직 아이디어가 없습니다.</p>'; return; }
+  function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  list.innerHTML = ideas.map(idea => {
+    const isSel=selectedIds.includes(idea.id), isEd=editingId===idea.id, hasMemo=idea.memo&&idea.memo.trim();
+    return `<div class="idea-card${isSel?" sel":""}${isEd?" edit":""}" id="ic-${idea.id}">
+      <div class="idea-hd" onclick="toggleSel('${idea.id}')">
+        <div style="overflow:hidden;">
+          <div class="idea-actions" onclick="event.stopPropagation()">
+            <button class="ibt" onclick="sendToStory('${idea.id}')" title="스토리로">📖→</button>
+            <button class="ibt${isEd?" act":""}" onclick="toggleEdit('${idea.id}')">${isEd?"✕":"✏️"}</button>
+            <button class="ibt" onclick="delIdea('${idea.id}')" style="color:#FF8080">🗑</button>
+          </div>
+          <div class="idea-txt">${esc(idea.text)}</div>
+        </div>
+        <div class="idea-meta">
+          <span style="font-size:10px;color:var(--dim);">${idea.date||""}</span>
+          ${hasMemo?'<span class="badge memo">메모 ✓</span>':""}
+          ${isSel?'<span class="badge sel2">✓ 선택됨</span>':""}
+        </div>
+      </div>
+      ${hasMemo&&!isEd?`<div class="memo-view">${esc(idea.memo)}</div>`:""}
+      ${isEd?`<div class="edit-panel">
+        <span class="lbl n">// 제목 수정</span>
+        <input type="text" id="et-${idea.id}" value="${esc(idea.text)}" style="margin-bottom:10px;">
+        <span class="lbl n">// 내용 추가 / 메모</span>
+        <textarea id="em-${idea.id}" rows="4" placeholder="세부내용, 메모, 레퍼런스...">${esc(idea.memo||"")}</textarea>
+        <div class="row">
+          <button class="btn bn" onclick="saveEdit('${idea.id}')">💾 저장</button>
+          <button class="btn bd2" onclick="cancelEdit()">취소</button>
+        </div>
+      </div>`:""}
+    </div>`;
+  }).join("");
+}
+
+window.addIdea = async () => {
+  const inp=document.getElementById("idea-input");
+  if (!inp.value.trim()) return;
+  await dbAdd("ideas",{text:inp.value.trim(), memo:"", date:new Date().toLocaleDateString("ko-KR")});
+  inp.value=""; loadIdeas();
+};
+window.delIdea = async (id) => {
+  if (!confirm("삭제?")) return;
+  await dbDel("ideas",id); selectedIds=selectedIds.filter(s=>s!==id);
+  if(editingId===id) editingId=null;
+  updateCombineBtn(); loadIdeas();
+};
+window.toggleSel = (id) => {
+  if(editingId===id) return;
+  selectedIds=selectedIds.includes(id)?selectedIds.filter(s=>s!==id):[...selectedIds,id];
+  renderIdeas(); updateCombineBtn();
+};
+window.toggleEdit = (id) => { editingId=editingId===id?null:id; renderIdeas(); };
+window.cancelEdit = () => { editingId=null; renderIdeas(); };
+window.saveEdit = async (id) => {
+  const t=document.getElementById(`et-${id}`)?.value.trim();
+  const m=document.getElementById(`em-${id}`)?.value;
+  if(!t) return;
+  await dbUpdate("ideas",id,{text:t,memo:m||""});
+  editingId=null; toast("저장됨 ✓"); loadIdeas();
+};
+window.sendToStory = (id) => {
+  const idea=ideas.find(i=>i.id===id); if(!idea) return;
+  document.getElementById("story-concept").value=idea.memo?`${idea.text}\n\n${idea.memo}`:idea.text;
+  switchTab(1); toast("스토리 탭으로 전송됨 ✓");
+};
+function updateCombineBtn() {
+  const btn=document.getElementById("combine-btn");
+  btn.style.display=selectedIds.length>=2?"inline-block":"none";
+  if(selectedIds.length>=2) btn.textContent=`✦ ${selectedIds.length}개 조합`;
+}
+window.combineIdeas = () => {
+  const chosen=ideas.filter(i=>selectedIds.includes(i.id)).map((i,idx)=>`${idx+1}. ${i.text}${i.memo?" (메모: "+i.memo+")":""}`);
+  const prompt=`당신은 MKL Music의 K-Pop 크리에이티브 디렉터입니다.
+
+[아이디어 목록]
+${chosen.join("\n")}
+
+[요청]
+위 아이디어들을 창의적으로 조합해서 K-Pop 노래의 중독적인 컨셉 스토리를 200자 이내로 만들어주세요.
+MKL Genesis 세계관(NEXUS: AI 통제 유토피아 / Green Light: 야성적 자유)을 참고해도 좋습니다.
+한국어로 작성해주세요.`;
+  document.getElementById("combine-text").textContent=prompt;
+  document.getElementById("combine-result").style.display="block";
+};
+
+// ── 스토리 ────────────────────────────────────────────────────
+window.generateStory = () => {
+  const concept=document.getElementById("story-concept").value.trim();
+  if(!concept) return alert("컨셉을 입력해주세요.");
+  const faction=getFactions().find(f=>f.id===curFactionId)||getFactions()[0];
+  const guide = getStoryGuide();
+  const prompt=`당신은 MKL Music의 K-Pop 크리에이티브 디렉터입니다.
+
+[분위기/세계관]
+${faction.prompt}
+
+[컨셉]
+${concept}
+
+[요청]
+위 컨셉과 분위기를 바탕으로 K-Pop 노래의 스토리와 메인 훅 후보 3개를 만들어주세요.
+
+[스토리 작성 기준]
+- 분량: ${guide.length}
+- 구성: ${guide.structure}
+
+[훅 작성 기준]
+${guide.hook}
+
+[출력 형식]
+${guide.format}`;
+  document.getElementById("story-prompt-text").textContent=prompt;
+  document.getElementById("story-prompt-card").style.display="block";
+  document.getElementById("story-result").style.display="block";
+};
+
+window.useHook = (num) => {
+  const src = document.getElementById("hook-text-"+num);
+  if (!src||!src.value.trim()) return toast("훅을 입력해주세요");
+  document.getElementById("hook-text").value = src.value.trim();
+  toast(num+"순위 훅을 1순위로 설정했습니다 ✓");
+};
+
+window.saveStoryResult = async () => {
+  const story=document.getElementById("story-text").value.trim();
+  const hook=document.getElementById("hook-text").value.trim();
+  if(!story) return alert("스토리를 입력해주세요.");
+  const hook2=(document.getElementById("hook-text-2")||{}).value||"";
+  const hook3=(document.getElementById("hook-text-3")||{}).value||"";
+  await saveLog("story", "스토리: "+story+"\n\n훅1: "+hook+"\n훅2: "+hook2+"\n훅3: "+hook3);
+  toast("저장됨 ✓");
+};
+
+window.toTab2 = () => {
+  document.getElementById("lyrics-story").value=document.getElementById("story-text").value;
+  document.getElementById("lyrics-hook").value=document.getElementById("hook-text").value;
+  switchTab(2);
+};
+
+// ── 가사 ──────────────────────────────────────────────────────
+window.generateLyrics = () => {
+  const story=document.getElementById("lyrics-story").value.trim();
+  const hook=document.getElementById("lyrics-hook").value.trim();
+  if(!story||!hook) return alert("스토리와 훅을 입력해주세요.");
+  const style=document.getElementById("lyrics-style").value.trim();
+  const prompt=`당신은 K-Pop 전문 작사가입니다. Suno AI에 최적화된 가사 3가지 버전을 작성해주세요.
+
+[스토리]
+${story}
+
+[메인 훅]
+${hook}
+
+[기본 스타일 힌트]
+${style||"K-Pop, 발랄, 풍자적"}
+
+[요청]
+아래 규칙을 지키면서, 장르와 분위기가 다른 가사 3개 버전을 만들어주세요.
+각 버전마다 Suno AI용 스타일 태그도 함께 제시해주세요.
+
+[가사 공통 규칙]
+- [Verse], [Pre-Chorus], [Chorus], [Bridge], [Outro] 구조 태그 사용
+- 메인 훅은 반드시 [Chorus]에서 반복
+- 한국어 가사 (영어 후렴구 혼용 가능)
+- 총 16-24 lines
+- 운율과 리듬감 중시
+
+[출력 형식]
+반드시 아래 형식을 지켜서 출력하세요. 코드 블록(\`\`\`)으로 감싸서 모바일에서 쉽게 복사할 수 있게 해주세요.
+
+📋 버전 1 스타일 태그 복사:
+\`\`\`
+(Suno AI 스타일 태그 — 영어, 쉼표 구분, 15개 이내)
+\`\`\`
+
+📋 버전 1 가사 복사:
+\`\`\`
+(가사 전체)
+\`\`\`
+
+📋 버전 2 스타일 태그 복사:
+\`\`\`
+(Suno AI 스타일 태그)
+\`\`\`
+
+📋 버전 2 가사 복사:
+\`\`\`
+(가사 전체)
+\`\`\`
+
+📋 버전 3 스타일 태그 복사:
+\`\`\`
+(Suno AI 스타일 태그)
+\`\`\`
+
+📋 버전 3 가사 복사:
+\`\`\`
+(가사 전체)
+\`\`\``;
+  document.getElementById("lyrics-prompt-text").textContent=prompt;
+  document.getElementById("lyrics-prompt-card").style.display="block";
+  document.getElementById("lyrics-result").style.display="block";
+};
+window.selectLyrics = (num) => {
+  const el = document.getElementById("lyrics-text-"+num);
+  if (!el||!el.value.trim()) return toast("가사를 먼저 입력해주세요");
+  document.getElementById("suno-lyrics").value = el.value.trim();
+  switchTab(3);
+  toast("VER."+num+" → 수노 탭으로 전송됨 ✓");
+};
+window.toTab3 = () => {
+  const v1 = document.getElementById("lyrics-text-1")?.value.trim();
+  if(v1) { document.getElementById("suno-lyrics").value=v1; }
+  switchTab(3);
+};
+
+// ── 수노 ──────────────────────────────────────────────────────
+let activeTags=[];
+const QUICK_TAGS=["K-pop","dark synth","bright pop","trap beat","live drums","female vocal","male vocal","duet","falsetto","powerful","dreamy","cinematic","lo-fi","EDM drop","acoustic","city pop"];
+const STRUCTS=["[Intro]","[Verse]","[Pre-Chorus]","[Chorus]","[Hook]","[Bridge]","[Outro]","[Instrumental Break]","[Build]","[Drop]"];
+
+function renderQuickTags() {
+  document.getElementById("quick-tags").innerHTML=QUICK_TAGS.map(t=>`<span class="tag${activeTags.includes(t)?" on":""}" onclick="toggleQTag('${t}')">${t}</span>`).join("");
+  document.getElementById("suno-structs").innerHTML=STRUCTS.map(t=>`<span class="tag" onclick="copyText('${t}')">${t}</span>`).join("");
+}
+window.toggleQTag = (t) => {
+  activeTags=activeTags.includes(t)?activeTags.filter(x=>x!==t):[...activeTags,t];
+  document.getElementById("suno-style").value=activeTags.join(", ");
+  renderQuickTags();
+};
+window.generateSuno = () => {
+  const lyrics=document.getElementById("suno-lyrics").value.trim();
+  const style=document.getElementById("suno-style").value.trim();
+  if(!lyrics) return alert("가사를 입력해주세요.");
+  const prompt=`당신은 Suno AI 음원 생성 전문가입니다.
+
+[가사]
+${lyrics}
+
+[선호 스타일]
+${style||"K-Pop"}
+
+[요청]
+위 가사와 스타일을 분석해서 Suno AI 최적화 프롬프트를 만들어주세요.
+
+출력 형식:
+
+【Style Prompt】
+(영어, 쉼표 구분, 장르+무드+악기+보컬 태그 15개 이내)
+
+【Title Suggestion】
+(영어 제목 / 한국어 제목)
+
+【Suno Tips】
+(이 곡을 Suno에서 생성할 때 주의할 점 2-3줄)`;
+  document.getElementById("suno-prompt-text").textContent=prompt;
+  document.getElementById("suno-prompt-card").style.display="block";
+  document.getElementById("suno-result").style.display="block";
+};
+
+window.saveSunoResult = async () => {
+  const result=document.getElementById("suno-text-input").value.trim();
+  if(!result) return alert("결과를 입력해주세요.");
+  document.getElementById("suno-text").textContent=result;
+  await saveLog("suno",result);
+  toast("저장됨 ✓");
+};
+
+// ── 스타일 ────────────────────────────────────────────────────
+let presets=[];
+const DEF_PRESETS=[
+  {name:"NEXUS 사이버팝",tags:"cyberpop, futuristic synth, female vocal, glossy K-pop, gold aesthetic"},
+  {name:"Green Light 인디",tags:"indie folk, lo-fi warmth, acoustic guitar, raw vocal, organic"},
+  {name:"다크 K-팝",tags:"dark K-pop, cinematic strings, trap hi-hat, powerful male vocal, 808 bass"},
+  {name:"미래 R&B",tags:"future R&B, lush chords, falsetto, neo-soul, dreamy reverb"},
+  {name:"하이퍼팝",tags:"hyperpop, distorted 808, pitched vocals, maximalist, glitchy FX"},
+];
+
+async function loadPresets() {
+  let data = dbList("presets");
+  if(data.length===0){
+    for(const p of DEF_PRESETS) lsAdd("presets", {...p});
+    data = dbList("presets");
+  }
+  presets = data.sort((a,b)=>(a._ts||"").localeCompare(b._ts||""));
+  renderPresets();
+}
+function renderPresets() {
+  document.getElementById("presets-lbl").textContent=`// 저장된 스타일 (${presets.length}개)`;
+  document.getElementById("presets-list").innerHTML=presets.map(p=>`
+    <div style="background:rgba(255,255,255,0.02);border:1px solid var(--bd);border-radius:8px;padding:14px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+        <div><div style="font-size:13px;color:#fff;font-weight:700;margin-bottom:5px;">${p.name}</div><div style="font-size:11px;color:var(--dim);line-height:1.7;">${p.tags}</div></div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn bn" style="padding:5px 10px;" onclick="copyText('${(p.tags||"").replace(/'/g,"\\'")}').then(()=>toast())">복사</button>
+          <button class="btn br" style="padding:5px 10px;" onclick="delPreset('${p.id}')">삭제</button>
+        </div>
+      </div>
+    </div>`).join("");
+}
+window.addPreset = async () => {
+  const name=document.getElementById("preset-name").value.trim();
+  const tags=document.getElementById("preset-tags").value.trim();
+  if(!name||!tags) return alert("이름과 태그를 입력해주세요.");
+  await dbAdd("presets",{name,tags});
+  document.getElementById("preset-name").value="";
+  document.getElementById("preset-tags").value="";
+  await loadPresets();
+};
+window.delPreset = async (id) => { await dbDel("presets",id); await loadPresets(); };
+
+// ── 로그 ──────────────────────────────────────────────────────
+let allLogs=[], logFilter="all";
+function loadLogs() {
+  allLogs = dbList("logs").sort((a,b)=>(b._ts||"").localeCompare(a._ts||""));
+  renderLogs();
+}
+function renderLogs() {
+  const filtered=logFilter==="all"?allLogs:allLogs.filter(l=>l.type===logFilter);
+  const list=document.getElementById("logs-list");
+  if(!filtered.length){list.innerHTML='<p class="empty">기록이 없습니다.</p>';return;}
+  const tc={story:"var(--nexus)",lyrics:"var(--green)",suno:"#9090FF",combine:"var(--nexus)"};
+  const tn={story:"STORY",lyrics:"LYRICS",suno:"SUNO PROMPT",combine:"COMBINE"};
+  list.innerHTML=filtered.map(log=>{
+    const ts=log._ts?new Date(log._ts).toLocaleString("ko-KR"):"";
+    const preview=(log.content||"").slice(0,120)+(log.content||"").length>120?"...":"";
+    const logId="log-"+log.id;
+    return `<div class="log-item">
+      <div style="font-family:'Orbitron',monospace;font-size:8px;letter-spacing:2px;color:${tc[log.type]||"var(--dim)"};margin-bottom:4px;">${tn[log.type]||log.type}</div>
+      <div style="font-size:12px;color:var(--dim);line-height:1.6;">${preview}</div>
+      <div style="display:none" id="${logId}">${(log.content||"").replace(/&/g,"&amp;")}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+        <span style="font-size:9px;color:var(--dim);">${ts}</span>
+        <button class="btn bd2" style="padding:3px 10px;font-size:8px;" onclick="copyText(document.getElementById('${logId}').innerText)">복사</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+window.filterLogs = (f) => { logFilter=f; renderLogs(); };
+
+// ── 설정 ──────────────────────────────────────────────────────
+// ── 스토리 생성 기준 관리 ─────────────────────────────────────
+const DEF_STORY_GUIDE = {
+  length: "200~300자",
+  structure: "감정선 + 주요 장면 2~3개 + 결말 방향 포함\n1절과 2절 흐름이 자연스럽게 연결되도록\n수노 AI가 가사를 쓸 때 참고할 수 있는 구체적인 상황 묘사",
+  hook: "8~12음절, 중독적이고 반복 가능\n영어 혼용 가능\n분위기와 반어법/아이러니를 살려서\n3개 후보 제시 (각각 다른 방향으로)",
+  format: "반드시 아래 형식을 지켜서 출력하세요. 각 항목은 코드 블록(```)으로 감싸서 모바일에서 쉽게 복사할 수 있게 해주세요.\n\n📋 스토리 복사:\n```\n(스토리 내용)\n```\n\n📋 훅 1순위 복사:\n```\n(1순위 훅)\n```\n\n📋 훅 2순위 복사:\n```\n(2순위 훅)\n```\n\n📋 훅 3순위 복사:\n```\n(3순위 훅)\n```"
+};
+
+function getStoryGuide() {
+  try { return JSON.parse(localStorage.getItem("mkl_story_guide")) || DEF_STORY_GUIDE; }
+  catch { return DEF_STORY_GUIDE; }
+}
+
+function loadStoryGuideToForm() {
+  const g = getStoryGuide();
+  const el = (id) => document.getElementById(id);
+  if(el("story-length-guide")) el("story-length-guide").value = g.length || DEF_STORY_GUIDE.length;
+  if(el("story-structure-guide")) el("story-structure-guide").value = g.structure || DEF_STORY_GUIDE.structure;
+  if(el("hook-guide")) el("hook-guide").value = g.hook || DEF_STORY_GUIDE.hook;
+  if(el("output-format-guide")) el("output-format-guide").value = g.format || DEF_STORY_GUIDE.format;
+}
+
+window.saveStoryGuide = () => {
+  const guide = {
+    length: document.getElementById("story-length-guide").value.trim() || DEF_STORY_GUIDE.length,
+    structure: document.getElementById("story-structure-guide").value.trim() || DEF_STORY_GUIDE.structure,
+    hook: document.getElementById("hook-guide").value.trim() || DEF_STORY_GUIDE.hook,
+    format: document.getElementById("output-format-guide").value.trim() || DEF_STORY_GUIDE.format,
+  };
+  localStorage.setItem("mkl_story_guide", JSON.stringify(guide));
+  const st = document.getElementById("guide-status");
+  st.textContent = "✓ 저장됨 — 다음 스토리 생성부터 적용됩니다.";
+  st.style.color = "var(--green)";
+  toast("스토리 기준 저장됨 ✓");
+};
+
+window.resetStoryGuide = () => {
+  localStorage.removeItem("mkl_story_guide");
+  loadStoryGuideToForm();
+  const st = document.getElementById("guide-status");
+  st.textContent = "기본값으로 초기화됐습니다.";
+  st.style.color = "var(--nexus)";
+  toast("초기화됨 ✓");
+};
+
+window.saveGhToken = async () => {
+  const v=document.getElementById("gh-token-input").value.trim();
+  if(!v) return;
+  localStorage.setItem("mkl_gh_token",v);
+  document.getElementById("gh-token-input").value="";
+  document.getElementById("gh-token-status").textContent="연결 테스트 중...";
+  document.getElementById("gh-token-status").style.color="var(--nexus)";
+  await testGitHub();
+  const st=document.getElementById("gh-token-status");
+  if(ghAvailable){
+    st.textContent="✓ 연결됨! 데이터를 GitHub에 동기화합니다.";
+    st.style.color="var(--green)";
+    await ghSyncCol("ideas");
+    await ghSyncCol("presets");
+  } else {
+    st.textContent="연결 실패 — 토큰을 확인해주세요.";
+    st.style.color="#FF6060";
+  }
+};
+window.showGhToken = () => {
+  const k=ghToken();
+  const st=document.getElementById("gh-token-status");
+  if(!k){ st.textContent="토큰이 입력되지 않았습니다."; st.style.color="var(--dim)"; return; }
+  st.textContent=`현재: ${k.slice(0,8)}...${k.slice(-4)}`;
+  st.style.color="var(--nexus)";
+};
+
+// ── 연결 테스트 ────────────────────────────────────────────────
+async function testGitHub() {
+  const badge = document.getElementById("conn-badge");
+  if (!ghToken()) {
+    badge.textContent = "⚙️ 토큰 필요";
+    badge.className = "ver-badge err";
+    ghAvailable = false;
+    return;
+  }
+  try {
+    badge.textContent = "GitHub 확인 중..."; badge.className = "ver-badge";
+    const r = await fetch(`${GH_API}/repos/${GH_OWNER}/${GH_REPO}`, {
+      headers:{ Authorization:`token ${ghToken()}`, Accept:"application/vnd.github+json" }
+    });
+    if (r.ok) {
+      ghAvailable = true;
+      badge.textContent = "GitHub ✓";
+      badge.className = "ver-badge ok";
+      setSyncStatus("ok","GitHub 클라우드 연결됨 ✓");
+    } else {
+      ghAvailable = false;
+      badge.textContent = "GitHub 오류 "+r.status;
+      badge.className = "ver-badge err";
+    }
+  } catch(e) {
+    ghAvailable = false;
+    badge.textContent = "연결 오류";
+    badge.className = "ver-badge err";
+  }
+}
+
+window.retryConnect = async () => { await testGitHub(); };
+
+// ── Init ───────────────────────────────────────────────────────
+setSyncStatus("ok","로컬 저장 모드");
+renderFactionBtns();
+renderFactionSettings();
+renderQuickTags();
+
+async function initApp() {
+  // 0. 설정 폼에 저장된 기준값 로드
+  loadStoryGuideToForm();
+  // 1. localStorage 즉시 로드
+  loadIdeas();
+  await loadPresets();
+  loadLogs();
+  setSyncStatus("ok","로컬 저장 모드");
+
+  // 2. GitHub 연결 테스트
+  await testGitHub();
+
+  // 3. GitHub 연결됐으면 클라우드에서 불러와서 병합
+  if (ghAvailable) {
+    const pulled = await ghPullCol("ideas");
+    if (pulled) { loadIdeas(); }
+    await ghPullCol("presets");
+    await loadPresets();
+    await ghPullCol("logs");
+    loadLogs();
+    setSyncStatus("ok","GitHub 클라우드 동기화됨 ✓");
+  }
+}
+initApp();
+</script>
+</body>
+</html>
